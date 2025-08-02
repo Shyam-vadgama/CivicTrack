@@ -34,6 +34,11 @@ export default function SubmitComplaintPage() {
       submitData.append("priority", formData.priority)
       submitData.append("user_id", user._id)
 
+      // Add coordinates if available
+      if (formData.coordinates) {
+        submitData.append("coordinates", JSON.stringify(formData.coordinates))
+      }
+
       if (formData.image) {
         submitData.append("image", formData.image)
       }

@@ -15,7 +15,7 @@ interface Complaint {
   title: string
   category: string
   description: string
-  location: string
+  location: string | { address: string; coordinates?: { lat: number; lng: number } }
   image_url?: string
   status: "Pending" | "In Progress" | "Resolved"
   admin_remarks?: string
@@ -100,6 +100,13 @@ export default function DashboardPage() {
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
     }
+  }
+
+  const getLocationDisplay = (location: string | { address: string; coordinates?: { lat: number; lng: number } }) => {
+    if (typeof location === 'string') {
+      return location
+    }
+    return location.address
   }
 
   if (loading) {
@@ -232,7 +239,7 @@ export default function DashboardPage() {
                       <div>
                         <CardTitle className="text-lg">{complaint.title}</CardTitle>
                         <CardDescription>
-                          {complaint.category} • {complaint.location}
+                          {complaint.category} • {getLocationDisplay(complaint.location)}
                         </CardDescription>
                       </div>
                       <Badge className={getStatusColor(complaint.status)}>

@@ -26,8 +26,20 @@ export async function POST(request: NextRequest) {
     const category = formData.get("category") as string
     const description = formData.get("description") as string
     const location = formData.get("location") as string
+    const priority = formData.get("priority") as string
     const userId = formData.get("user_id") as string
     const image = formData.get("image") as File | null
+    
+    // Parse coordinates if provided
+    const coordinatesStr = formData.get("coordinates") as string
+    let coordinates = null
+    if (coordinatesStr) {
+      try {
+        coordinates = JSON.parse(coordinatesStr)
+      } catch (error) {
+        console.error("Error parsing coordinates:", error)
+      }
+    }
 
     if (!title || !category || !description || !location || !userId) {
       return NextResponse.json({ message: "All required fields must be provided" }, { status: 400 })
@@ -45,12 +57,22 @@ export async function POST(request: NextRequest) {
 
     const { db } = await connectToDatabase()
 
+    // Create location object with coordinates and address
+    const locationData = {
+      address: location,
+      coordinates: coordinates ? {
+        lat: coordinates.lat,
+        lng: coordinates.lng
+      } : null
+    }
+
     const result = await db.collection("complaints").insertOne({
       user_id: userId,
       title,
       category,
       description,
-      location,
+      location: locationData,
+      priority: priority || "Medium",
       image_url: imageUrl,
       status: "Pending",
       admin_remarks: null,

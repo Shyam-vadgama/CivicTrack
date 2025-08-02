@@ -16,7 +16,7 @@ interface PublicComplaint {
   title: string
   category: string
   description: string
-  location: string
+  location: string | { address: string; coordinates?: { lat: number; lng: number } }
   image_url?: string
   status: "Pending" | "In Progress" | "Resolved"
   created_at: string
@@ -78,7 +78,7 @@ export default function PublicComplaintsPage() {
         (complaint) =>
           complaint.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           complaint.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          complaint.location.toLowerCase().includes(searchTerm.toLowerCase()),
+          getLocationDisplay(complaint.location).toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
@@ -140,6 +140,13 @@ export default function PublicComplaintsPage() {
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
     }
+  }
+
+  const getLocationDisplay = (location: string | { address: string; coordinates?: { lat: number; lng: number } }) => {
+    if (typeof location === 'string') {
+      return location
+    }
+    return location.address
   }
 
   if (loading) {
@@ -264,7 +271,7 @@ export default function PublicComplaintsPage() {
                       <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
                         <div className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />
-                          {complaint.location}
+                          {getLocationDisplay(complaint.location)}
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />

@@ -15,7 +15,7 @@ interface ComplaintDetail {
   title: string
   category: string
   description: string
-  location: string
+  location: string | { address: string; coordinates?: { lat: number; lng: number } }
   image_url?: string
   status: "Pending" | "In Progress" | "Resolved"
   admin_remarks?: string
@@ -110,6 +110,13 @@ export default function ComplaintDetailPage() {
     }
   }
 
+  const getLocationDisplay = (location: string | { address: string; coordinates?: { lat: number; lng: number } }) => {
+    if (typeof location === 'string') {
+      return location
+    }
+    return location.address
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -165,7 +172,7 @@ export default function ComplaintDetailPage() {
                   <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-300 mb-4">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      {complaint.location}
+                      {getLocationDisplay(complaint.location)}
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />

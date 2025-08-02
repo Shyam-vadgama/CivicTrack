@@ -32,6 +32,9 @@ export async function connectToDatabase() {
 
     const db = client.db("civictrack")
 
+    // Create geospatial index for location queries
+    await createGeospatialIndex(db)
+
     cachedClient = client
     cachedDb = db
 
@@ -39,6 +42,24 @@ export async function connectToDatabase() {
   } catch (error) {
     console.error("❌ Failed to connect to MongoDB:", error)
     throw new Error(`Failed to connect to MongoDB: ${error}`)
+  }
+}
+
+// Function to create geospatial index for location queries
+async function createGeospatialIndex(db: Db) {
+  try {
+    // Create a 2dsphere index on the location.coordinates field
+    await db.collection("complaints").createIndex(
+      { "location.coordinates": "2dsphere" },
+      { 
+        name: "location_2dsphere",
+        background: true 
+      }
+    )
+    console.log("✅ Geospatial index created for location queries")
+  } catch (error) {
+    // Index might already exist, which is fine
+    console.log("ℹ️ Geospatial index setup:", error instanceof Error ? error.message : "Unknown error")
   }
 }
 

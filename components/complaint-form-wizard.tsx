@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,15 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Upload, MapPin, FileText, Camera, CheckCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ChevronLeft, ChevronRight, Upload, MapPin, FileText, Camera, CheckCircle, Navigation, AlertCircle } from "lucide-react"
+import { toast } from "sonner"
+import { 
+  LocationData, 
+  getCurrentLocationWithAddress, 
+  checkLocationPermission, 
+  getGeolocationErrorMessage 
+} from "@/lib/geocoding"
 
 interface FormData {
   title: string
@@ -19,6 +27,7 @@ interface FormData {
   location: string
   priority: string
   image: File | null
+  coordinates?: LocationData
 }
 
 interface ComplaintFormWizardProps {
@@ -54,9 +63,51 @@ export function ComplaintFormWizard({ onSubmit, loading = false }: ComplaintForm
     image: null,
   })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [locationPermission, setLocationPermission] = useState<PermissionState | null>(null)
+  const [isGettingLocation, setIsGettingLocation] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
 
   const totalSteps = 4
   const progress = (currentStep / totalSteps) * 100
+
+  // Check location permission on component mount
+  useEffect(() => {
+    checkLocationPermission().then(setLocationPermission)
+  }, [])
+
+  const getCurrentLocation = async () => {
+    setIsGettingLocation(true)
+    setLocationError(null)
+
+    try {
+      const locationData = await getCurrentLocationWithAddress()
+      
+      setFormData(prev => ({
+        ...prev,
+        location: locationData.address,
+        coordinates: locationData
+      }))
+
+      toast.success("Location detected and address filled automatically!")
+      setLocationPermission('granted')
+
+    } catch (error: any) {
+      console.error('Error getting location:', error)
+      
+      if (error.code) {
+        // GeolocationPositionError
+        setLocationError(getGeolocationErrorMessage(error))
+        if (error.code === 1) {
+          setLocationPermission('denied')
+        }
+      } else {
+        // Other errors (like geocoding failures)
+        setLocationError(error.message || "Failed to get location. Please enter the address manually.")
+      }
+    } finally {
+      setIsGettingLocation(false)
+    }
+  }
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -189,6 +240,44 @@ export function ComplaintFormWizard({ onSubmit, loading = false }: ComplaintForm
           {/* Step 3: Location */}
           {currentStep === 3 && (
             <div className="space-y-6">
+              {/* Location Permission Status */}
+              {locationPermission === 'denied' && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Location access was denied. You can still enter the address manually, or enable location permissions in your browser settings.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Location Error */}
+              {locationError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{locationError}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Get Current Location Button */}
+              <div className="space-y-2">
+                <Label>Get Current Location</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={getCurrentLocation}
+                  disabled={isGettingLocation || locationPermission === 'denied'}
+                  className="w-full flex items-center gap-2"
+                >
+                  <Navigation className="w-4 h-4" />
+                  {isGettingLocation ? "Getting Location..." : "Use My Current Location"}
+                </Button>
+                {formData.coordinates && (
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    ✓ Location detected: {formData.coordinates.lat.toFixed(6)}, {formData.coordinates.lng.toFixed(6)}
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="location">Specific Location *</Label>
                 <Input
@@ -202,10 +291,10 @@ export function ComplaintFormWizard({ onSubmit, loading = false }: ComplaintForm
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Location Tips:</h4>
                 <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                  <li>• Click "Use My Current Location" to auto-fill your address</li>
                   <li>• Be as specific as possible (street address, building number)</li>
                   <li>• Include nearby landmarks or cross streets</li>
                   <li>• Mention the ward or district if known</li>
-                  <li>• Use GPS coordinates if available</li>
                 </ul>
               </div>
             </div>

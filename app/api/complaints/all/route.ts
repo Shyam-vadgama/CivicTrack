@@ -53,11 +53,12 @@ export async function GET(request: NextRequest) {
         {
           $project: {
             _id: 1,
-            user_id: 1, 
+            user_id: 1,
             title: 1,
             category: 1,
             description: 1,
             location: 1,
+            priority: 1,
             image_url: 1,
             status: 1,
             admin_remarks: 1,

@@ -27,7 +27,7 @@ interface Complaint {
   title: string
   category: string
   description: string
-  location: string
+  location: string | { address: string; coordinates?: { lat: number; lng: number } }
   image_url?: string
   status: "Pending" | "In Progress" | "Resolved"
   admin_remarks?: string
@@ -270,6 +270,13 @@ export default function AdminDashboardPage() {
     }
   }
 
+  const getLocationDisplay = (location: string | { address: string; coordinates?: { lat: number; lng: number } }) => {
+    if (typeof location === 'string') {
+      return location
+    }
+    return location.address
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -479,7 +486,7 @@ export default function AdminDashboardPage() {
                       <div>
                         <CardTitle className="text-lg">{complaint.title}</CardTitle>
                         <CardDescription>
-                          {complaint.category} • {complaint.location}
+                          {complaint.category} • {getLocationDisplay(complaint.location)}
                         </CardDescription>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           Submitted by: {complaint.user_name || "Unknown"} ({complaint.user_email || "No email"})
