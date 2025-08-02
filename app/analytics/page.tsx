@@ -335,7 +335,12 @@ export default function AnalyticsPage() {
                       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
                         {index + 1}
                       </div>
-                      <span className="font-medium">{location.location}</span>
+                      <span className="font-medium">
+  {typeof location.location === 'object'
+    ? location.location.address
+    : location.location}
+</span>
+
                     </div>
                     <Badge variant="secondary">{location.count} complaints</Badge>
                   </div>
